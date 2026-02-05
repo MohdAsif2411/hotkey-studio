@@ -1,0 +1,352 @@
+.dashboard {
+      padding: 2rem;
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    .dashboard-header {
+      margin-bottom: 2rem;
+    }
+
+    .dashboard-header h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #c9d1d9;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .subtitle {
+      color: #8b949e;
+      margin: 0;
+      font-size: 1rem;
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    .stat-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .stat-icon {
+      font-size: 2rem;
+      opacity: 0.8;
+    }
+
+    .stat-icon.running {
+      animation: pulse 2s infinite;
+    }
+
+    .stat-icon.enabled {
+      color: #3fb950;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 0.8; }
+      50% { opacity: 1; }
+    }
+
+    .stat-content {
+      flex: 1;
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #58a6ff;
+      line-height: 1;
+    }
+
+    .stat-label {
+      color: #8b949e;
+      font-size: 0.875rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Sections */
+    .quick-actions-section,
+    .recent-section,
+    .ahk-status-section {
+      margin-bottom: 2rem;
+    }
+
+    .section-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #c9d1d9;
+      margin: 0 0 1rem 0;
+    }
+
+    .section-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .view-all {
+      color: #58a6ff;
+      text-decoration: none;
+      font-size: 0.875rem;
+      transition: color 0.2s ease;
+    }
+
+    .view-all:hover {
+      color: #79c0ff;
+    }
+
+    /* Quick Actions */
+    .quick-actions-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1rem;
+    }
+
+    .action-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-left: 3px solid;
+      border-radius: 8px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      transition: all 0.2s ease;
+      cursor: pointer;
+    }
+
+    .action-card:hover {
+      background: #1c2128;
+      transform: translateX(4px);
+    }
+
+    .action-icon {
+      font-size: 2rem;
+    }
+
+    .action-content {
+      flex: 1;
+    }
+
+    .action-title {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #c9d1d9;
+      margin: 0 0 0.25rem 0;
+    }
+
+    .action-description {
+      font-size: 0.875rem;
+      color: #8b949e;
+      margin: 0;
+    }
+
+    .action-button {
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #58a6ff;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .action-button:hover {
+      background: #30363d;
+      border-color: #58a6ff;
+    }
+
+    .arrow {
+      transition: transform 0.2s ease;
+    }
+
+    .action-card:hover .arrow {
+      transform: translateX(4px);
+    }
+
+    /* Empty State */
+    .empty-state {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+    }
+
+    .empty-icon {
+      font-size: 4rem;
+      opacity: 0.5;
+      margin-bottom: 1rem;
+    }
+
+    .empty-state h3 {
+      font-size: 1.25rem;
+      color: #c9d1d9;
+      margin: 0 0 0.5rem 0;
+    }
+
+    .empty-state p {
+      color: #8b949e;
+      margin: 0 0 1.5rem 0;
+    }
+
+    .primary-button {
+      background: #238636;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .primary-button:hover {
+      background: #2ea043;
+    }
+
+    /* Scripts List */
+    .scripts-list {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .script-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.5rem;
+      border-bottom: 1px solid #30363d;
+      transition: background 0.2s ease;
+    }
+
+    .script-item:last-child {
+      border-bottom: none;
+    }
+
+    .script-item:hover {
+      background: #1c2128;
+    }
+
+    .script-icon {
+      font-size: 1.5rem;
+    }
+
+    .script-info {
+      flex: 1;
+    }
+
+    .script-name {
+      font-weight: 500;
+      color: #c9d1d9;
+      margin-bottom: 0.25rem;
+    }
+
+    .script-meta {
+      font-size: 0.75rem;
+      color: #8b949e;
+    }
+
+    .script-status {
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      background: #21262d;
+      color: #8b949e;
+    }
+
+    .script-status.active {
+      background: #238636;
+      color: white;
+    }
+
+    /* AutoHotkey Status */
+    .status-card {
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 8px;
+      padding: 1.5rem;
+    }
+
+    .status-content {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .status-icon {
+      font-size: 2rem;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+    }
+
+    .status-icon.success {
+      background: rgba(35, 134, 54, 0.2);
+      color: #3fb950;
+    }
+
+    .status-icon.warning {
+      background: rgba(187, 128, 9, 0.2);
+      color: #d29922;
+    }
+
+    .status-info {
+      flex: 1;
+    }
+
+    .status-title {
+      font-weight: 600;
+      color: #c9d1d9;
+      margin-bottom: 0.25rem;
+    }
+
+    .status-detail {
+      font-size: 0.875rem;
+      color: #8b949e;
+    }
+
+    .install-button {
+      background: #58a6ff;
+      color: #0d1117;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .install-button:hover {
+      background: #79c0ff;
+    }

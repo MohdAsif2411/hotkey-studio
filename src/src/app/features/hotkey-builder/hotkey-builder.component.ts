@@ -1,13 +1,9 @@
 import { Component } from '@angular/core';
 
 @Component({
-    selector: 'app-hotkey-builder',
-    standalone: true,
-    template: `
-    <div style="padding: 2rem;">
-      <h1>Hotkey Builder</h1>
-      <p>Visual hotkey builder - Coming soon</p>
-    </div>
-  `
+  selector: 'app-hotkey-builder',
+  standalone: true,
+  templateUrl: './hotkey-builder.component.html',
+  styleUrl: './hotkey-builder.component.scss'
 })
 export class HotkeyBuilderComponent { }

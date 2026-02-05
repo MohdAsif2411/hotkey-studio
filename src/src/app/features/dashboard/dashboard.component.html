@@ -1,0 +1,118 @@
+<div class="dashboard">
+    <header class="dashboard-header">
+        <h1>Dashboard</h1>
+        <p class="subtitle">Welcome to AutoHotkey GUI Wrapper</p>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ scriptStats().total }}</div>
+                <div class="stat-label">Total Scripts</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon running">▶️</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ scriptStats().running }}</div>
+                <div class="stat-label">Running Scripts</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon enabled">✅</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ scriptStats().enabled }}</div>
+                <div class="stat-label">Enabled Scripts</div>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">⌨️</div>
+            <div class="stat-content">
+                <div class="stat-value">{{ activeHotkeys() }}</div>
+                <div class="stat-label">Active Hotkeys</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <section class="quick-actions-section">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="quick-actions-grid">
+            @for (action of quickActions(); track action.title) {
+            <div class="action-card" [style.border-left-color]="action.color">
+                <div class="action-icon">{{ action.icon }}</div>
+                <div class="action-content">
+                    <h3 class="action-title">{{ action.title }}</h3>
+                    <p class="action-description">{{ action.description }}</p>
+                </div>
+                <button class="action-button">
+                    <span>Open</span>
+                    <span class="arrow">→</span>
+                </button>
+            </div>
+            }
+        </div>
+    </section>
+
+    <!-- Recent Scripts -->
+    <section class="recent-section">
+        <div class="section-header">
+            <h2 class="section-title">Recent Scripts</h2>
+            <a href="#" class="view-all">View All →</a>
+        </div>
+
+        @if (recentScripts().length === 0) {
+        <div class="empty-state">
+            <div class="empty-icon">📄</div>
+            <h3>No scripts yet</h3>
+            <p>Create your first AutoHotkey script to get started</p>
+            <button class="primary-button">Create Script</button>
+        </div>
+        } @else {
+        <div class="scripts-list">
+            @for (script of recentScripts(); track script.name) {
+            <div class="script-item">
+                <div class="script-icon">📝</div>
+                <div class="script-info">
+                    <div class="script-name">{{ script.name }}</div>
+                    <div class="script-meta">Modified {{ script.modified }}</div>
+                </div>
+                <div class="script-status" [class.active]="script.running">
+                    {{ script.running ? 'Running' : 'Stopped' }}
+                </div>
+            </div>
+            }
+        </div>
+        }
+    </section>
+
+    <!-- AutoHotkey Status -->
+    <section class="ahk-status-section">
+        <h2 class="section-title">AutoHotkey Status</h2>
+        <div class="status-card">
+            @if (ahkInstalled()) {
+            <div class="status-content">
+                <div class="status-icon success">✓</div>
+                <div class="status-info">
+                    <div class="status-title">AutoHotkey v2 Installed</div>
+                    <div class="status-detail">Version {{ ahkVersion() }}</div>
+                </div>
+            </div>
+            } @else {
+            <div class="status-content">
+                <div class="status-icon warning">⚠️</div>
+                <div class="status-info">
+                    <div class="status-title">AutoHotkey Not Installed</div>
+                    <div class="status-detail">Click below to install AutoHotkey v2</div>
+                </div>
+                <button class="install-button">Install Now</button>
+            </div>
+            }
+        </div>
+    </section>
+</div>
