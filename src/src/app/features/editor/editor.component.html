@@ -1,4 +1,60 @@
-<div style="padding: 2rem;">
-    <h1>Script Editor</h1>
-    <p>Script editor component - Coming soon</p>
+<div class="editor-container">
+    <!-- Toolbar -->
+    <div class="editor-toolbar">
+        <div class="toolbar-left">
+            <button class="toolbar-button" (click)="newScript()">
+                <span class="icon">📄</span>
+                <span>New</span>
+            </button>
+            <button class="toolbar-button" (click)="openScript()">
+                <span class="icon">📂</span>
+                <span>Open</span>
+            </button>
+            <button class="toolbar-button" [disabled]="!currentFile()" (click)="saveScript()">
+                <span class="icon">💾</span>
+                <span>Save</span>
+            </button>
+            <div class="toolbar-divider"></div>
+            <button class="toolbar-button" [disabled]="!currentFile()" (click)="runScript()">
+                <span class="icon">▶️</span>
+                <span>Run</span>
+            </button>
+            <button class="toolbar-button" [disabled]="!isRunning()" (click)="stopScript()">
+                <span class="icon">⏹️</span>
+                <span>Stop</span>
+            </button>
+        </div>
+
+        <div class="toolbar-right">
+            @if (currentFile()) {
+            <span class="current-file">{{ currentFile() }}</span>
+            } @else {
+            <span class="current-file placeholder">No file open</span>
+            }
+        </div>
+    </div>
+
+    <!-- Editor Area -->
+    <div class="editor-wrapper">
+        <div #editorContainer class="monaco-editor-container"></div>
+    </div>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-left">
+            @if (isRunning()) {
+            <span class="status-item running">
+                <span class="status-dot"></span>
+                Running
+            </span>
+            } @else {
+            <span class="status-item">Ready</span>
+            }
+        </div>
+
+        <div class="status-right">
+            <span class="status-item">AutoHotkey v2</span>
+            <span class="status-item">Line {{ cursorPosition().line }}, Col {{ cursorPosition().column }}</span>
+        </div>
+    </div>
 </div>

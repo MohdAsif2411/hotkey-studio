@@ -182,6 +182,15 @@ function registerIPCHandlers(): void {
         }
     });
 
+    ipcMain.handle('process:is-running', async (_event, pid: number) => {
+        try {
+            const isRunning = processManager.isScriptRunning(pid);
+            return { success: true, data: isRunning };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
     // Macro Recorder
     ipcMain.handle('macro:start-recording', async () => {
         try {
@@ -196,6 +205,24 @@ function registerIPCHandlers(): void {
         try {
             // TODO: Stop recording and return recording data
             return { success: true, data: null };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('macro:pause-recording', async () => {
+        try {
+            // TODO: Pause recording
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('macro:resume-recording', async () => {
+        try {
+            // TODO: Resume recording
+            return { success: true };
         } catch (error: any) {
             return { success: false, error: error.message };
         }
@@ -243,6 +270,52 @@ function registerIPCHandlers(): void {
         try {
             // TODO: Implement settings storage
             return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    // File Dialogs
+    ipcMain.handle('dialog:open-file', async (_event, options: any) => {
+        try {
+            const { dialog } = require('electron');
+            const result = await dialog.showOpenDialog(mainWindow!, {
+                title: options?.title || 'Open File',
+                defaultPath: options?.defaultPath,
+                filters: options?.filters || [
+                    { name: 'AutoHotkey Scripts', extensions: ['ahk'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ],
+                properties: ['openFile']
+            });
+
+            if (result.canceled || result.filePaths.length === 0) {
+                return { success: true, data: null };
+            }
+
+            return { success: true, data: result.filePaths[0] };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('dialog:save-file', async (_event, options: any) => {
+        try {
+            const { dialog } = require('electron');
+            const result = await dialog.showSaveDialog(mainWindow!, {
+                title: options?.title || 'Save File',
+                defaultPath: options?.defaultPath,
+                filters: options?.filters || [
+                    { name: 'AutoHotkey Scripts', extensions: ['ahk'] },
+                    { name: 'All Files', extensions: ['*'] }
+                ]
+            });
+
+            if (result.canceled || !result.filePath) {
+                return { success: true, data: null };
+            }
+
+            return { success: true, data: result.filePath };
         } catch (error: any) {
             return { success: false, error: error.message };
         }
