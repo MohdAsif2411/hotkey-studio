@@ -180,6 +180,53 @@ function registerIPCHandlers(): void {
         }
     });
 
+    // Macro Recorder
+    ipcMain.handle('macro:start-recording', async () => {
+        try {
+            // TODO: Import and initialize MacroRecorder
+            return { success: true };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('macro:stop-recording', async () => {
+        try {
+            // TODO: Stop recording and return recording data
+            return { success: true, data: null };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('macro:generate-script', async (_event, recording: any) => {
+        try {
+            // TODO: Generate script from recording
+            return { success: true, data: '' };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    // Compiler
+    ipcMain.handle('compiler:check-available', async () => {
+        try {
+            // TODO: Import and initialize Compiler
+            return { success: true, data: false };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
+    ipcMain.handle('compiler:compile-script', async (_event, scriptPath: string, options: any) => {
+        try {
+            // TODO: Compile script
+            return { success: true, data: null };
+        } catch (error: any) {
+            return { success: false, error: error.message };
+        }
+    });
+
     // Settings
     ipcMain.handle('settings:get', async (_event, key: string) => {
         try {

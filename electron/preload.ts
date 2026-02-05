@@ -28,6 +28,19 @@ contextBridge.exposeInMainWorld('electronAPI', {
         listRunning: () => ipcRenderer.invoke('process:list-running')
     },
 
+    // Macro Recorder
+    macro: {
+        startRecording: () => ipcRenderer.invoke('macro:start-recording'),
+        stopRecording: () => ipcRenderer.invoke('macro:stop-recording'),
+        generateScript: (recording: any) => ipcRenderer.invoke('macro:generate-script', recording)
+    },
+
+    // Compiler
+    compiler: {
+        checkAvailable: () => ipcRenderer.invoke('compiler:check-available'),
+        compileScript: (scriptPath: string, options: any) => ipcRenderer.invoke('compiler:compile-script', scriptPath, options)
+    },
+
     // Settings
     settings: {
         get: (key: string) => ipcRenderer.invoke('settings:get', key),
@@ -54,6 +67,15 @@ export interface ElectronAPI {
         runScript: (scriptPath: string) => Promise<{ success: boolean; data?: number; error?: string }>;
         stopScript: (pid: number) => Promise<{ success: boolean; error?: string }>;
         listRunning: () => Promise<{ success: boolean; data?: any[]; error?: string }>;
+    };
+    macro: {
+        startRecording: () => Promise<{ success: boolean; error?: string }>;
+        stopRecording: () => Promise<{ success: boolean; data?: any; error?: string }>;
+        generateScript: (recording: any) => Promise<{ success: boolean; data?: string; error?: string }>;
+    };
+    compiler: {
+        checkAvailable: () => Promise<{ success: boolean; data?: boolean; error?: string }>;
+        compileScript: (scriptPath: string, options: any) => Promise<{ success: boolean; data?: string; error?: string }>;
     };
     settings: {
         get: (key: string) => Promise<{ success: boolean; data?: any; error?: string }>;
