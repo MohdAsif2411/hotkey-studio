@@ -30,15 +30,17 @@ function createWindow(): void {
     });
 
     // Load Angular app
-    // In development: http://localhost:4200
+    // In development: http://localhost:4200 (requires Angular dev server running)
     // In production: file://dist/angular/browser/index.html
-    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
+    // For now, always load static files since we built the Angular app
+    const isDev = false; // Set to true when running with Angular dev server
 
     if (isDev) {
         mainWindow.loadURL('http://localhost:4200');
         mainWindow.webContents.openDevTools();
     } else {
         mainWindow.loadFile(path.join(__dirname, '../angular/browser/index.html'));
+        mainWindow.webContents.openDevTools(); // Keep dev tools open for debugging
     }
 
     // Show window when ready
