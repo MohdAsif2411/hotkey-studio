@@ -1,7 +1,7 @@
 {
   "name": "autohotkey-gui-wrapper",
   "version": "0.1.0",
-  "description": "Modern Electron-based GUI wrapper for AutoHotkey v2 with Angular 19",
+  "description": "Modern Electron-based GUI wrapper for AutoHotkey v2 with Angular 21",
   "license": "MIT",
   "author": "Your Name",
   "main": "dist/electron/main.js",

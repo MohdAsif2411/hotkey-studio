@@ -7,7 +7,7 @@ description: Agent instructions for developing the AutoHotkey GUI wrapper applic
 
 ## Project Overview
 
-You are assisting with the development of an Electron-based Windows application that provides a graphical user interface for AutoHotkey. This application will make automation accessible to users who may not be familiar with scripting.
+You are assisting with the development of an Electron-based Windows application with Angular 21 frontend that provides a graphical user interface for AutoHotkey. This application will make automation accessible to users who may not be familiar with scripting.
 
 ## Key Objectives
 
