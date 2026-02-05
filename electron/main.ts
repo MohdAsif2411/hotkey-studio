@@ -31,14 +31,14 @@ function createWindow(): void {
 
     // Load Angular app
     // In development: http://localhost:4200
-    // In production: file://dist/angular/index.html
-    const isDev = process.env.NODE_ENV === 'development';
+    // In production: file://dist/angular/browser/index.html
+    const isDev = process.env.NODE_ENV === 'development' || !app.isPackaged;
 
     if (isDev) {
         mainWindow.loadURL('http://localhost:4200');
         mainWindow.webContents.openDevTools();
     } else {
-        mainWindow.loadFile(path.join(__dirname, '../angular/index.html'));
+        mainWindow.loadFile(path.join(__dirname, '../angular/browser/index.html'));
     }
 
     // Show window when ready

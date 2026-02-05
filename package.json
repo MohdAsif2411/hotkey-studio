@@ -8,11 +8,11 @@
   "scripts": {
     "start": "npm run build:electron && electron .",
     "build:electron": "tsc -p electron/tsconfig.json",
-    "build:angular": "cd src && ng build",
+    "build:angular": "cd src && npm run build",
     "build": "npm run build:electron && npm run build:angular",
     "dev": "concurrently \"npm run watch:electron\" \"npm run dev:angular\"",
     "watch:electron": "tsc -p electron/tsconfig.json --watch",
-    "dev:angular": "cd src && ng serve",
+    "dev:angular": "cd src && npm start",
     "package": "npm run build && electron-builder",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
