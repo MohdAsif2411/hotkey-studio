@@ -1,1 +1,31 @@
-node_modules
+# Electron Build Output
+dist/
+
+# Angular Build Output  
+src/dist/
+src/.angular/
+
+# Dependencies
+node_modules/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Release builds
+release/
+
+# Temporary files
+*.tmp
+.cache/
