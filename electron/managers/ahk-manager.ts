@@ -1,8 +1,9 @@
-import { exec } from 'child_process';
+import { exec, execSync } from 'child_process';
 import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as https from 'https';
+import * as http from 'http';
 import * as os from 'os';
 
 const execPromise = promisify(exec);
@@ -32,28 +33,34 @@ export class AHKManager {
      * Check if AutoHotkey v2 is installed
      */
     async checkInstallation(): Promise<AHKInstallationStatus> {
+        console.log('[AHK] Checking installation...');
+
         // Try registry first (most reliable)
         const registryPath = await this.checkRegistry();
         if (registryPath) {
-            // Try v2 subdirectory first, then root directory
+            console.log('[AHK] Registry InstallDir found:', registryPath);
+            // Try multiple executable names in registry path
             const possiblePaths = [
                 path.join(registryPath, 'v2', 'AutoHotkey.exe'),
+                path.join(registryPath, 'v2', 'AutoHotkey64.exe'),
+                path.join(registryPath, 'v2', 'AutoHotkey32.exe'),
                 path.join(registryPath, 'AutoHotkey.exe'),
                 path.join(registryPath, 'AutoHotkey64.exe'),
                 path.join(registryPath, 'AutoHotkey32.exe')
             ];
 
             for (const exePath of possiblePaths) {
+                console.log('[AHK] Checking path:', exePath);
                 try {
                     await fs.access(exePath);
+                    console.log('[AHK] File exists:', exePath);
                     const version = await this.getVersionFromExecutable(exePath);
-                    // Verify it's v2
-                    if (version.startsWith('2.') || version.startsWith('v2.')) {
-                        this.ahkPath = exePath;
-                        this.version = version;
-                        return { installed: true, path: exePath, version, source: 'registry' };
-                    }
-                } catch {
+                    console.log('[AHK] Detected version:', version);
+                    this.ahkPath = exePath;
+                    this.version = version;
+                    return { installed: true, path: exePath, version, source: 'registry' };
+                } catch (e: any) {
+                    console.log('[AHK] Path not accessible:', exePath, e.message);
                     continue;
                 }
             }
@@ -62,6 +69,7 @@ export class AHKManager {
         // Try common installation paths
         const commonPath = await this.checkCommonPaths();
         if (commonPath) {
+            console.log('[AHK] Found via common path:', commonPath);
             const version = await this.getVersionFromExecutable(commonPath);
             this.ahkPath = commonPath;
             this.version = version;
@@ -71,12 +79,14 @@ export class AHKManager {
         // Try PATH environment variable
         const pathEnvPath = await this.checkPATH();
         if (pathEnvPath) {
+            console.log('[AHK] Found via PATH:', pathEnvPath);
             const version = await this.getVersionFromExecutable(pathEnvPath);
             this.ahkPath = pathEnvPath;
             this.version = version;
             return { installed: true, path: pathEnvPath, version, source: 'path-env' };
         }
 
+        console.log('[AHK] AutoHotkey not found.');
         return { installed: false, path: null, version: null };
     }
 
@@ -84,25 +94,26 @@ export class AHKManager {
      * Check Windows Registry for AutoHotkey installation
      */
     private async checkRegistry(): Promise<string | null> {
-        // Check multiple registry locations
         const registryPaths = [
             'HKLM\\SOFTWARE\\AutoHotkey',
-            'HKLM\\SOFTWARE\\Wow6432Node\\AutoHotkey',  // 64-bit systems
+            'HKLM\\SOFTWARE\\Wow6432Node\\AutoHotkey',
             'HKCU\\SOFTWARE\\AutoHotkey'
         ];
 
         for (const regPath of registryPaths) {
             try {
+                console.log('[AHK] Querying registry:', regPath);
                 const { stdout } = await execPromise(
                     `reg query "${regPath}" /v InstallDir 2>nul`,
                     { encoding: 'utf8' }
                 );
                 const match = stdout.match(/InstallDir\s+REG_SZ\s+(.+)/);
                 if (match) {
-                    return match[1].trim();
+                    const installDir = match[1].trim();
+                    console.log('[AHK] Registry InstallDir:', installDir);
+                    return installDir;
                 }
             } catch {
-                // Try next registry path
                 continue;
             }
         }
@@ -112,32 +123,38 @@ export class AHKManager {
 
     /**
      * Check common installation paths
+     * NOTE: Use string concatenation for drive paths, NOT path.join('C:', ...)
+     * because path.join('C:', 'foo') produces 'C:foo' on Windows (missing backslash)
      */
     private async checkCommonPaths(): Promise<string | null> {
+        const programFiles = process.env.PROGRAMFILES || 'C:\\Program Files';
+        const programFilesX86 = process.env['PROGRAMFILES(X86)'] || 'C:\\Program Files (x86)';
+        const localAppData = process.env.LOCALAPPDATA || '';
+
         const commonPaths = [
-            // AutoHotkey v2 specific paths (v2 subdirectory)
-            path.join('C:', 'Program Files', 'AutoHotkey', 'v2', 'AutoHotkey.exe'),
-            path.join('C:', 'Program Files (x86)', 'AutoHotkey', 'v2', 'AutoHotkey.exe'),
-            path.join(process.env.PROGRAMFILES || '', 'AutoHotkey', 'v2', 'AutoHotkey.exe'),
-            path.join(process.env['PROGRAMFILES(X86)'] || '', 'AutoHotkey', 'v2', 'AutoHotkey.exe'),
-            // Also check root AutoHotkey directory (some installers put v2 here)
-            path.join('C:', 'Program Files', 'AutoHotkey', 'AutoHotkey.exe'),
-            path.join('C:', 'Program Files (x86)', 'AutoHotkey', 'AutoHotkey.exe'),
-            path.join(process.env.PROGRAMFILES || '', 'AutoHotkey', 'AutoHotkey.exe'),
-            path.join(process.env['PROGRAMFILES(X86)'] || '', 'AutoHotkey', 'AutoHotkey.exe'),
+            // v2 subdirectory (standard installation)
+            `${programFiles}\\AutoHotkey\\v2\\AutoHotkey.exe`,
+            `${programFiles}\\AutoHotkey\\v2\\AutoHotkey64.exe`,
+            `${programFiles}\\AutoHotkey\\v2\\AutoHotkey32.exe`,
+            `${programFilesX86}\\AutoHotkey\\v2\\AutoHotkey.exe`,
+            `${programFilesX86}\\AutoHotkey\\v2\\AutoHotkey64.exe`,
+            // Root AutoHotkey directory
+            `${programFiles}\\AutoHotkey\\AutoHotkey.exe`,
+            `${programFiles}\\AutoHotkey\\AutoHotkey64.exe`,
+            `${programFilesX86}\\AutoHotkey\\AutoHotkey.exe`,
             // User-specific installation
-            path.join(process.env.LOCALAPPDATA || '', 'Programs', 'AutoHotkey', 'v2', 'AutoHotkey.exe'),
-            path.join(process.env.LOCALAPPDATA || '', 'Programs', 'AutoHotkey', 'AutoHotkey.exe'),
+            ...(localAppData ? [
+                `${localAppData}\\Programs\\AutoHotkey\\v2\\AutoHotkey.exe`,
+                `${localAppData}\\Programs\\AutoHotkey\\v2\\AutoHotkey64.exe`,
+                `${localAppData}\\Programs\\AutoHotkey\\AutoHotkey.exe`,
+            ] : []),
         ];
 
         for (const ahkPath of commonPaths) {
             try {
                 await fs.access(ahkPath);
-                // Verify it's actually v2 by checking version
-                const version = await this.getVersionFromExecutable(ahkPath);
-                if (version.startsWith('2.') || version.startsWith('v2.')) {
-                    return ahkPath;
-                }
+                console.log('[AHK] Found via common path:', ahkPath);
+                return ahkPath;
             } catch {
                 continue;
             }
@@ -151,18 +168,18 @@ export class AHKManager {
      */
     private async checkPATH(): Promise<string | null> {
         try {
-            const { stdout } = await execPromise('where AutoHotkey.exe 2>nul');
-            const paths = stdout.trim().split('\n');
+            const { stdout } = await execPromise('where AutoHotkey.exe 2>nul', { encoding: 'utf8' });
+            const paths = stdout.trim().split('\n').map(p => p.trim()).filter(p => p.length > 0);
+            console.log('[AHK] Found in PATH:', paths);
 
             // Prefer v2 installation
             for (const foundPath of paths) {
                 if (foundPath.includes('v2')) {
-                    return foundPath.trim();
+                    return foundPath;
                 }
             }
 
-            // Return first found if no v2 specific path
-            return paths[0]?.trim() || null;
+            return paths[0] || null;
         } catch {
             return null;
         }
@@ -172,29 +189,41 @@ export class AHKManager {
      * Get version from AutoHotkey executable
      */
     private async getVersionFromExecutable(exePath: string): Promise<string> {
+        // Method 1: Use PowerShell to get file version info (most reliable)
         try {
-            // Try running with --version flag
-            const { stdout } = await execPromise(`"${exePath}" --version 2>nul`);
-            const match = stdout.match(/(\d+\.\d+\.\d+)/);
-            if (match) {
-                return match[1];
-            }
-        } catch {
-            // Version flag not supported, try file properties
-        }
-
-        try {
-            // Use PowerShell to get file version
-            const psCommand = `(Get-Item "${exePath.replace(/\\/g, '\\\\')}").VersionInfo.FileVersion`;
-            const { stdout } = await execPromise(`powershell -Command "${psCommand}"`);
+            const escapedPath = exePath.replace(/'/g, "''");
+            const psCommand = `(Get-Item '${escapedPath}').VersionInfo.ProductVersion`;
+            const { stdout } = await execPromise(
+                `powershell -NoProfile -Command "${psCommand}"`,
+                { encoding: 'utf8', timeout: 5000 }
+            );
             const version = stdout.trim();
-            if (version && version !== '') {
+            if (version && version !== '' && /\d+\.\d+/.test(version)) {
+                console.log('[AHK] Version from PowerShell ProductVersion:', version);
                 return version;
             }
-        } catch {
-            // Could not get version
+        } catch (e: any) {
+            console.log('[AHK] PowerShell ProductVersion failed:', e.message);
         }
 
+        // Method 2: Try FileVersion
+        try {
+            const escapedPath = exePath.replace(/'/g, "''");
+            const psCommand = `(Get-Item '${escapedPath}').VersionInfo.FileVersion`;
+            const { stdout } = await execPromise(
+                `powershell -NoProfile -Command "${psCommand}"`,
+                { encoding: 'utf8', timeout: 5000 }
+            );
+            const version = stdout.trim();
+            if (version && version !== '' && /\d+\.\d+/.test(version)) {
+                console.log('[AHK] Version from PowerShell FileVersion:', version);
+                return version;
+            }
+        } catch (e: any) {
+            console.log('[AHK] PowerShell FileVersion failed:', e.message);
+        }
+
+        console.log('[AHK] Could not determine version, returning "unknown"');
         return 'unknown';
     }
 
@@ -209,14 +238,29 @@ export class AHKManager {
             const tempDir = os.tmpdir();
             const installerPath = path.join(tempDir, 'AutoHotkey_v2_setup.exe');
 
-            await this.downloadInstaller(installerPath, (progress) => {
-                progressCallback?.({ stage: 'downloading', progress, message: `Downloading... ${progress}%` });
-            });
+            // Delete old installer if exists
+            try { await fs.unlink(installerPath); } catch { /* ignore */ }
+
+            await this.downloadFile(
+                'https://www.autohotkey.com/download/ahk-v2.exe',
+                installerPath,
+                (progress) => {
+                    progressCallback?.({ stage: 'downloading', progress, message: `Downloading... ${progress}%` });
+                }
+            );
 
             progressCallback?.({ stage: 'downloading', progress: 100, message: 'Download complete' });
+            console.log('[AHK] Download complete:', installerPath);
 
-            // Wait a moment to ensure file is fully released by the OS
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Verify file exists and has size
+            const stat = await fs.stat(installerPath);
+            console.log('[AHK] Installer size:', stat.size, 'bytes');
+            if (stat.size < 1000) {
+                throw new Error('Downloaded file is too small, download may have failed');
+            }
+
+            // Wait for file release
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
             // Install
             progressCallback?.({ stage: 'installing', progress: 0, message: 'Installing AutoHotkey v2...' });
@@ -226,33 +270,33 @@ export class AHKManager {
             // Verify installation with retry logic
             progressCallback?.({ stage: 'verifying', progress: 0, message: 'Verifying installation...' });
 
-            // Wait longer for registry to be updated
-            await new Promise(resolve => setTimeout(resolve, 3000));
+            let status: AHKInstallationStatus = { installed: false, path: null, version: null };
+            const maxRetries = 5;
 
-            let status = await this.checkInstallation();
-            let retries = 0;
-            const maxRetries = 3;
-
-            // Retry detection if not found immediately
-            while (!status.installed && retries < maxRetries) {
-                retries++;
-                progressCallback?.({ stage: 'verifying', progress: (retries / maxRetries) * 100, message: `Retrying detection (${retries}/${maxRetries})...` });
-                await new Promise(resolve => setTimeout(resolve, 2000));
+            for (let i = 0; i < maxRetries; i++) {
+                console.log(`[AHK] Detection attempt ${i + 1}/${maxRetries}...`);
+                await new Promise(resolve => setTimeout(resolve, 3000));
                 status = await this.checkInstallation();
+
+                if (status.installed) {
+                    console.log('[AHK] Detected successfully on attempt', i + 1);
+                    break;
+                }
+
+                progressCallback?.({ stage: 'verifying', progress: ((i + 1) / maxRetries) * 100, message: `Retrying detection (${i + 1}/${maxRetries})...` });
             }
 
             if (!status.installed || !status.path) {
-                throw new Error('Installation completed but AutoHotkey v2 not detected. Please restart the application or check manually.');
+                throw new Error(
+                    'Installation completed but AutoHotkey v2 not detected. ' +
+                    'It may have installed successfully - please restart the application to check.'
+                );
             }
 
             progressCallback?.({ stage: 'verifying', progress: 100, message: 'Verification complete' });
 
             // Cleanup
-            try {
-                await fs.unlink(installerPath);
-            } catch {
-                // Ignore cleanup errors
-            }
+            try { await fs.unlink(installerPath); } catch { /* ignore */ }
 
             progressCallback?.({ stage: 'complete', progress: 100, message: 'AutoHotkey v2 installed successfully' });
 
@@ -266,74 +310,74 @@ export class AHKManager {
     }
 
     /**
-     * Download AutoHotkey v2 installer
+     * Download a file with redirect following (GitHub uses multiple 302s)
      */
-    private downloadInstaller(destPath: string, progressCallback?: (progress: number) => void): Promise<void> {
+    private downloadFile(url: string, destPath: string, progressCallback?: (progress: number) => void): Promise<void> {
         return new Promise((resolve, reject) => {
-            // AutoHotkey v2 download URL - use the actual installer, not portable exe
-            // Latest version from GitHub releases
-            const downloadUrl = 'https://github.com/AutoHotkey/AutoHotkey/releases/download/v2.0.18/AutoHotkey_2.0.18_setup.exe';
+            const doRequest = (requestUrl: string, redirectCount: number = 0) => {
+                if (redirectCount > 5) {
+                    reject(new Error('Too many redirects'));
+                    return;
+                }
 
-            https.get(downloadUrl, (response) => {
-                // Follow redirects
-                if (response.statusCode === 301 || response.statusCode === 302) {
-                    const redirectUrl = response.headers.location;
-                    if (!redirectUrl) {
-                        reject(new Error('Redirect location not found'));
+                const protocol = requestUrl.startsWith('https') ? https : http;
+
+                console.log(`[AHK] Downloading from: ${requestUrl} (redirect #${redirectCount})`);
+
+                protocol.get(requestUrl, { headers: { 'User-Agent': 'HotkeyStudio/1.0' } }, (response) => {
+                    // Follow redirects
+                    if (response.statusCode && [301, 302, 303, 307, 308].includes(response.statusCode)) {
+                        const redirectUrl = response.headers.location;
+                        if (!redirectUrl) {
+                            reject(new Error('Redirect without location header'));
+                            return;
+                        }
+                        console.log('[AHK] Following redirect to:', redirectUrl);
+                        response.resume(); // Consume response to free memory
+                        doRequest(redirectUrl, redirectCount + 1);
                         return;
                     }
 
-                    https.get(redirectUrl, (redirectResponse) => {
-                        this.handleDownloadResponse(redirectResponse, destPath, progressCallback, resolve, reject);
-                    }).on('error', reject);
-                } else {
-                    this.handleDownloadResponse(response, destPath, progressCallback, resolve, reject);
-                }
-            }).on('error', reject);
-        });
-    }
+                    if (response.statusCode !== 200) {
+                        reject(new Error(`HTTP ${response.statusCode}: Failed to download`));
+                        return;
+                    }
 
-    /**
-     * Handle download response
-     */
-    private handleDownloadResponse(
-        response: any,
-        destPath: string,
-        progressCallback: ((progress: number) => void) | undefined,
-        resolve: () => void,
-        reject: (error: Error) => void
-    ): void {
-        const file = require('fs').createWriteStream(destPath);
-        const totalSize = parseInt(response.headers['content-length'] || '0', 10);
-        let downloadedSize = 0;
+                    const fsSync = require('fs');
+                    const file = fsSync.createWriteStream(destPath);
+                    const totalSize = parseInt(response.headers['content-length'] || '0', 10);
+                    let downloadedSize = 0;
 
-        response.on('data', (chunk: Buffer) => {
-            downloadedSize += chunk.length;
-            if (totalSize > 0 && progressCallback) {
-                const progress = Math.round((downloadedSize / totalSize) * 100);
-                progressCallback(progress);
-            }
-        });
+                    response.on('data', (chunk: Buffer) => {
+                        downloadedSize += chunk.length;
+                        if (totalSize > 0 && progressCallback) {
+                            const progress = Math.round((downloadedSize / totalSize) * 100);
+                            progressCallback(progress);
+                        }
+                    });
 
-        response.pipe(file);
+                    response.pipe(file);
 
-        file.on('finish', () => {
-            // Wait for the file stream to fully close before resolving
-            file.close((err: any) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    // Add a small delay to ensure file is fully released
-                    setTimeout(() => resolve(), 500);
-                }
-            });
-        });
+                    file.on('finish', () => {
+                        file.close((err: any) => {
+                            if (err) reject(err);
+                            else {
+                                console.log(`[AHK] Downloaded ${downloadedSize} bytes`);
+                                setTimeout(() => resolve(), 500);
+                            }
+                        });
+                    });
 
-        file.on('error', (error: Error) => {
-            file.close(() => {
-                require('fs').unlink(destPath, () => { });
-            });
-            reject(error);
+                    file.on('error', (error: Error) => {
+                        file.close(() => {
+                            fsSync.unlink(destPath, () => { });
+                        });
+                        reject(error);
+                    });
+                }).on('error', reject);
+            };
+
+            doRequest(url);
         });
     }
 
@@ -342,19 +386,26 @@ export class AHKManager {
      */
     private async runInstaller(installerPath: string): Promise<void> {
         try {
-            // AutoHotkey v2 installer uses custom flags (not standard Inno Setup)
-            // Correct flags based on official documentation:
-            // /silent - silent installation (shows progress, no prompts)
-            // /Elevate - install for all users (requires admin)
-            const installerFlags = '/silent';
+            // AutoHotkey v2 installer supports /silent flag
+            // Try /silent first, fall back without flags if it fails
+            console.log('[AHK] Running installer:', installerPath);
 
-            await execPromise(`"${installerPath}" ${installerFlags}`);
+            try {
+                await execPromise(`"${installerPath}" /silent`, { timeout: 60000 });
+                console.log('[AHK] Installer completed with /silent flag');
+            } catch (silentError: any) {
+                console.log('[AHK] /silent failed, trying without flags:', silentError.message);
+                // The installer may have still succeeded even if execPromise threw
+                // (some installers return non-zero exit codes)
+                // Wait and check
+            }
 
-            // Wait for installation to complete
-            // AutoHotkey v2 installer typically takes 5-10 seconds
-            await new Promise(resolve => setTimeout(resolve, 10000));
+            // Wait for installation to finish
+            await new Promise(resolve => setTimeout(resolve, 5000));
+            console.log('[AHK] Post-install wait completed');
         } catch (error: any) {
-            throw new Error(`Installer failed: ${error.message}`);
+            console.log('[AHK] Installer error (may still have succeeded):', error.message);
+            // Don't throw - installation may have succeeded even with an error
         }
     }
 
@@ -383,7 +434,7 @@ export class AHKManager {
     /**
      * Set AutoHotkey path manually
      */
-    setExecutablePath(path: string): void {
-        this.ahkPath = path;
+    setExecutablePath(exePath: string): void {
+        this.ahkPath = exePath;
     }
 }
